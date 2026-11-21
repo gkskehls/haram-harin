@@ -2,7 +2,7 @@ import { REAL_BIRTHDAY, PARTY_DATE } from "../config.js";
 
 export const renderCalendar = (isInviteMode) => {
     const targetDateStr = isInviteMode ? PARTY_DATE : REAL_BIRTHDAY;
-    const targetDate = new Date(targetDateStr);
+    const targetDate = new Date(`${targetDateStr}T00:00:00`);
     
     const year = targetDate.getFullYear();
     const month = targetDate.getMonth(); // 0-11

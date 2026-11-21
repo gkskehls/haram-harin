@@ -5,15 +5,22 @@ export const renderHeader = (isInviteMode) => {
     const dateStr = isInviteMode ? PARTY_DATE : REAL_BIRTHDAY;
     const formattedDate = dateStr.replace(/-/g, ". ");
     
-    // 요일 계산
-    const dayOfWeek = ["일", "월", "화", "수", "목", "금", "토"][new Date(dateStr).getDay()];
+    // 요일 계산 (로컬 자정 기준으로 파싱해 시간대 오차 방지)
+    const dayOfWeek = ["일", "월", "화", "수", "목", "금", "토"][new Date(`${dateStr}T00:00:00`).getDay()];
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    const targetStart = new Date(`${dateStr}T00:00:00`).getTime();
+    const isPast = todayStart > targetStart;
     
     let subInfo = "";
     if (isInviteMode) {
+        const subText = isPast
+            ? "귀한 걸음으로 하람&하린이의 첫걸음을 축복해 주셔서 감사합니다."
+            : "귀한 걸음 하시어 하람&하린이의 첫걸음을 축복해 주세요.";
         subInfo = `
             <p class="text-lg text-rose-500 font-semibold mb-1">${PARTY_TIME}</p>
-            <p class="text-lg text-rose-500 font-semibold mb-1">장소 미정 (추후 안내 예정)</p>
-            <p class="text-[11px] text-gray-500 mt-2 font-normal">귀한 걸음 하시어 하람&하린이의 첫걸음을 축복해 주세요.</p>
+            <p class="text-lg text-rose-500 font-semibold mb-1">메이필드 호텔</p>
+            <p class="text-[11px] text-gray-500 mt-2 font-normal">${subText}</p>
         `;
     } else {
         subInfo = `
