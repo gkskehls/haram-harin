@@ -18,19 +18,23 @@ export const renderMap = () => {
 };
 
 export const initMap = () => {
-    if (typeof naver !== 'undefined') {
-        const mapOptions = {
-            center: new naver.maps.LatLng(37.5458, 126.8153),
-            zoom: 16,
-            minZoom: 10,
-            zoomControl: true,
-            scrollWheel: false
-        };
-        const map = new naver.maps.Map('map', mapOptions);
-        new naver.maps.Marker({
-            position: new naver.maps.LatLng(37.5458, 126.8153),
-            map: map,
-            title: '메이필드 호텔'
-        });
+    if (typeof naver !== 'undefined' && naver.maps) {
+        try {
+            const mapOptions = {
+                center: new naver.maps.LatLng(37.5458, 126.8153),
+                zoom: 16,
+                minZoom: 10,
+                zoomControl: true,
+                scrollWheel: false
+            };
+            const map = new naver.maps.Map('map', mapOptions);
+            new naver.maps.Marker({
+                position: new naver.maps.LatLng(37.5458, 126.8153),
+                map: map,
+                title: '메이필드 호텔'
+            });
+        } catch (err) {
+            console.warn('Naver map initialization skipped:', err);
+        }
     }
 };

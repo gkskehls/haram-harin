@@ -36,8 +36,6 @@ export const renderGallery = () => {
 };
 
 export const initGallery = async (app) => {
-    const storage = getStorage(app);
-    
     // 갤러리에 표시할 사진 리스트 (폴더 경로 포함)
     const imageFiles = [
         'IMG_3197.jpeg', 
@@ -47,12 +45,19 @@ export const initGallery = async (app) => {
     const imageUrls = [];
 
     // Storage에서 URL 가져오기
-    for (const filePath of imageFiles) {
+    if (app) {
         try {
-            const url = await getDownloadURL(ref(storage, filePath));
-            imageUrls.push(url);
+            const storage = getStorage(app);
+            for (const filePath of imageFiles) {
+                try {
+                    const url = await getDownloadURL(ref(storage, filePath));
+                    imageUrls.push(url);
+                } catch (e) {
+                    console.error("Gallery image load failed:", filePath, e);
+                }
+            }
         } catch (e) {
-            console.error("Gallery image load failed:", filePath, e);
+            console.warn("Firebase Storage unavailable:", e);
         }
     }
 

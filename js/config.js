@@ -10,6 +10,28 @@ export const firebaseConfig = {
 
 export const naverMapClientId = "sljbc1x8t9";
 
+export const loadFirebaseConfig = async () => {
+    try {
+        const res = await fetch('/api/config');
+        if (res.ok) {
+            const contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+                const data = await res.json();
+                if (data?.firebaseConfig) {
+                    for (const [key, value] of Object.entries(data.firebaseConfig)) {
+                        if (value) {
+                            firebaseConfig[key] = value;
+                        }
+                    }
+                }
+            }
+        }
+    } catch {
+        // 정적 호스팅(Firebase Hosting) 등 백엔드가 없는 환경에서는 기본 설정 사용
+    }
+    return firebaseConfig;
+};
+
 // 날짜 설정
 export const REAL_BIRTHDAY = "2026-09-11"; // 실제 첫 생일
 export const PARTY_DATE = "2026-08-29";    // 돌잔치 당일 (8월 말 임시)

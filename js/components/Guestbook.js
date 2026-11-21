@@ -18,10 +18,51 @@ export const renderGuestbook = () => {
     `;
 };
 
+const escapeHtml = (str) =>
+    String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+
 export const initGuestbook = (app) => {
-    const db = getFirestore(app);
     const guestbookList = document.getElementById('guestbook-list');
     const btnSaveMessage = document.getElementById('btn-save-message');
+    const localMessages = [];
+
+    const renderMessages = (messages) => {
+        guestbookList.innerHTML = "";
+        if (messages.length === 0) {
+            guestbookList.innerHTML = '<div class="text-center text-gray-400 text-sm py-10 font-dodum">첫 번째 축하 메시지를 남겨주세요!</div>';
+            return;
+        }
+        messages.forEach((data) => {
+            const date = data.timestamp
+                ? new Date(data.timestamp.seconds * 1000).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                : (data.dateText || "방금 전");
+            const item = document.createElement('div');
+            item.className = "bg-white p-5 rounded-2xl shadow-sm border border-stone-100";
+            item.innerHTML = `
+                <div class="flex justify-between items-center mb-2 font-dodum">
+                    <span class="font-bold text-rose-400 text-sm">${escapeHtml(data.name)}</span>
+                    <span class="text-[10px] text-gray-400 font-light">${escapeHtml(date)}</span>
+                </div>
+                <div class="text-gray-700 text-sm leading-relaxed font-dodum">${escapeHtml(data.message).replace(/\n/g, '<br>')}</div>
+            `;
+            guestbookList.appendChild(item);
+        });
+    };
+
+    let db = null;
+    if (app) {
+        try {
+            db = getFirestore(app);
+        } catch (err) {
+            console.warn("Firestore unavailable, using in-memory guestbook:", err);
+            db = null;
+        }
+    }
 
     btnSaveMessage.onclick = async () => {
         const nameInput = document.getElementById('guest-name');
@@ -30,46 +71,62 @@ export const initGuestbook = (app) => {
         const message = messageInput.value.trim();
 
         if (!name || !message) {
-            alert("성함과 축하 메시지를 모두 입력해주세요! 😊");
+            const originalText = btnSaveMessage.innerText;
+            btnSaveMessage.innerText = "성함과 축하 메시지를 모두 입력해주세요!";
+            setTimeout(() => {
+                btnSaveMessage.innerText = originalText;
+            }, 2000);
             return;
         }
 
         btnSaveMessage.disabled = true;
         try {
-            await addDoc(collection(db, "guestbook"), {
-                name: name,
-                message: message,
-                timestamp: serverTimestamp()
-            });
+            if (db) {
+                await addDoc(collection(db, "guestbook"), {
+                    name: name,
+                    message: message,
+                    timestamp: serverTimestamp()
+                });
+            } else {
+                localMessages.unshift({
+                    name,
+                    message,
+                    dateText: new Date().toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                });
+                renderMessages(localMessages);
+            }
             nameInput.value = "";
             messageInput.value = "";
         } catch (e) {
             console.error(e);
+            localMessages.unshift({
+                name,
+                message,
+                dateText: new Date().toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+            });
+            renderMessages(localMessages);
+            nameInput.value = "";
+            messageInput.value = "";
         } finally {
             btnSaveMessage.disabled = false;
         }
     };
 
-    const q = query(collection(db, "guestbook"), orderBy("timestamp", "desc"));
-    onSnapshot(q, (querySnapshot) => {
-        guestbookList.innerHTML = "";
-        if (querySnapshot.empty) {
-            guestbookList.innerHTML = '<div class="text-center text-gray-400 text-sm py-10 font-dodum">첫 번째 축하 메시지를 남겨주세요!</div>';
-            return;
-        }
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            const date = data.timestamp ? new Date(data.timestamp.seconds * 1000).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : "방금 전";
-            const item = document.createElement('div');
-            item.className = "bg-white p-5 rounded-2xl shadow-sm border border-stone-100";
-            item.innerHTML = `
-                <div class="flex justify-between items-center mb-2 font-dodum">
-                    <span class="font-bold text-rose-400 text-sm">${data.name}</span>
-                    <span class="text-[10px] text-gray-400 font-light">${date}</span>
-                </div>
-                <div class="text-gray-700 text-sm leading-relaxed font-dodum">${data.message.replace(/\n/g, '<br>')}</div>
-            `;
-            guestbookList.appendChild(item);
-        });
-    });
+    if (db) {
+        const q = query(collection(db, "guestbook"), orderBy("timestamp", "desc"));
+        onSnapshot(
+            q,
+            (querySnapshot) => {
+                const items = [];
+                querySnapshot.forEach((doc) => items.push(doc.data()));
+                renderMessages(items);
+            },
+            (err) => {
+                console.warn("Firestore snapshot error, falling back to in-memory:", err);
+                renderMessages(localMessages);
+            }
+        );
+    } else {
+        renderMessages(localMessages);
+    }
 };

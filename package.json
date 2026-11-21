@@ -1,0 +1,16 @@
+{
+  "name": "haram-harin",
+  "version": "1.0.0",
+  "description": "하람 & 하린 첫돌 기록 및 돌잔치 초대장",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "build": "node --check server.js && node --check js/app.js && node --check js/config.js",
+    "lint": "node --check server.js && node --check js/app.js && node --check js/config.js && node --check js/components/Calendar.js && node --check js/components/Countdown.js && node --check js/components/Gallery.js && node --check js/components/Guestbook.js && node --check js/components/Header.js && node --check js/components/Invitation.js && node --check js/components/Map.js && node --check js/components/Timeline.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
